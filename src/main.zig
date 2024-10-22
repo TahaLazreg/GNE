@@ -39,6 +39,7 @@ const sf = struct {
 };
 
 const Cat = @import("./cat.zig");
+const ScrollEntity = @import("./scroll-entity.zig");
 
 const w_width = 640;
 const w_height = 360;
@@ -48,22 +49,17 @@ pub fn main() !void {
     var window = try sf.RenderWindow.createDefault(.{ .x = w_width, .y = w_height }, "Mousse's Great Adventure - Run!");
     defer window.destroy();
 
+    // Physics accumulator
     var accumulator: f32 = 0;
 
-    // var shape = try sf.CircleShape.create(100.0);
-    // defer shape.destroy();
-    // shape.setFillColor(sf.Color.Green);
-    // shape.setPosition(.{ .x = 100, .y = 200 });
-
+    // Ground
     var ground = try sf.RectangleShape.create(.{ .x = w_width, .y = w_height / 3 });
     defer ground.destroy();
     ground.setFillColor(sf.Color.fromRGB(201, 130, 58));
-    ground.setPosition(.{ .x = w_width / 2, .y = w_height * (2.0 / 3.0 + 1.0 / 6.0) });
+    ground.setPosition(.{ .x = 0, .y = w_height * (2.0 / 3.0) + 20 });
 
-    // var hitBox = try sf.RectangleShape.create(.{ .x = 100, .y = 100 });
-    // defer hitBox.destroy();
-    // hitBox.setFillColor(sf.Color.Red);
-    // hitBox.setPosition(.{ .x = 100, .y = 200 });
+    var cloud = try ScrollEntity.create(w_width, w_height, "./Assets/Cloud.png", -30, false);
+    defer cloud.destroy();
 
     var clock = try sf.Clock.create();
     defer clock.destroy();
@@ -89,15 +85,18 @@ pub fn main() !void {
 
         while (accumulator >= phys_update) {
             _ = player.phys_update(phys_update);
+            _ = cloud.phys_update(phys_update);
             accumulator -= phys_update;
         }
 
-        if (!player.render_update(dt)) {
+        if (!player.render_update(dt) or !cloud.render_update(dt)) {
             window.close();
         }
 
         window.clear(sf.Color.Cyan);
+        window.draw(cloud.sprite, null);
         window.draw(player.sprite, null);
+        window.draw(ground, null);
         window.display();
     }
 }
