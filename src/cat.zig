@@ -22,13 +22,16 @@ spriteAnimationTimeAcc: f32 = 0,
 
 // Jump handling - phys
 isJumping: bool = false,
-halfJumptime: f32 = 1.0 / 60.0 * 12.0,
-jumpHeight: f32 = 50,
+halfJumptime: f32 = 1.0 / 60.0 * 45.0,
+jumpHeight: f32 = 90,
 currJumpTime: f32 = 0,
+
+const catWidth = 30;
+const catHeight = 20;
 
 var texture: ?sf.Texture = null;
 
-pub fn create(w_width: comptime_int, w_height: comptime_int) !Cat {
+pub fn create(w_width: comptime_int, w_height: comptime_int, allocator: std.mem.Allocator) !*Cat {
     if (Cat.texture == null) {
         texture = try sf.Texture.createFromFile("./Assets/Mousse.png");
     }
@@ -36,14 +39,15 @@ pub fn create(w_width: comptime_int, w_height: comptime_int) !Cat {
     const text = texture.?;
 
     var sprite = try sf.Sprite.createFromTexture(text);
-    sprite.setTextureRect(.{ .top = 0, .left = 0, .width = 30, .height = 20 });
+    sprite.setTextureRect(.{ .top = 0, .left = 0, .width = catWidth, .height = catHeight });
     sprite.setPosition(pos);
 
-    var hitBox = try sf.RectangleShape.create(.{ .x = 30, .y = 20 });
+    var hitBox = try sf.RectangleShape.create(.{ .x = catWidth - 3, .y = catHeight - 3 });
     hitBox.setPosition(pos);
     hitBox.setTexture(Cat.texture.?);
 
-    const newPlayer = Cat{ .hitBox = hitBox, .sprite = sprite, .currPosition = pos, .initPosition = pos };
+    const newPlayer: *Cat = try allocator.create(Cat);
+    newPlayer.* = Cat{ .hitBox = hitBox, .sprite = sprite, .currPosition = pos, .initPosition = pos };
     return newPlayer;
 }
 
@@ -99,7 +103,7 @@ pub fn animateSprite(self: *Cat, dt: f32) bool {
             print("ERROR: Could not find texture for sprite update, exiting...", .{});
             return false;
         };
-        sprite.setTextureRect(.{ .top = 0, .left = self.spriteFrame * 30, .width = 30, .height = 20 });
+        sprite.setTextureRect(.{ .top = 0, .left = self.spriteFrame * catWidth, .width = catWidth, .height = catHeight });
         self.sprite.destroy();
         self.sprite = sprite;
 

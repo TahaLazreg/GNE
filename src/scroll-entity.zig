@@ -33,18 +33,11 @@ rng: std.Random,
 
 var texture: ?sf.Texture = null;
 
-pub fn create(w_width: comptime_int, w_height: comptime_int, textPath: [:0]const u8, spd: f32, colPlayer: bool) !Entity {
-    var prng = std.rand.DefaultPrng.init(blk: {
-        var seed: u64 = undefined;
-        try std.posix.getrandom(std.mem.asBytes(&seed));
-        break :blk seed;
-    });
-    const rand = prng.random();
-
+pub fn createSkyDec(w_width: comptime_int, w_height: comptime_int, textPath: [:0]const u8, spd: f32, colPlayer: bool, rand: std.Random) !Entity {
     if (Entity.texture == null) {
         texture = try sf.Texture.createFromFile(textPath);
     }
-    const pos = .{ .x = w_width + 35, .y = w_height / 3 + (@mod(rand.float(f32), 90) - 50.0) };
+    const pos = .{ .x = w_width + 35 + (rand.float(f32) * 500), .y = w_height / 3 - (rand.float(f32) * 120) };
     const text = texture.?;
 
     var sprite = try sf.Sprite.createFromTexture(text);
@@ -56,9 +49,32 @@ pub fn create(w_width: comptime_int, w_height: comptime_int, textPath: [:0]const
     hitBox.setTexture(Entity.texture.?);
 
     const dir = .{ .x = -1, .y = 0 };
+    const speedRange = 70;
+    const assignedSpeed = spd + (1 - ((pos.y - w_height / 3 - 120) / 120)) * speedRange - speedRange;
 
-    const newPlayer = Entity{ .hitBox = hitBox, .sprite = sprite, .currPosition = pos, .initPosition = pos, .rng = rand, .direction = dir, .collidesPlayer = colPlayer, .speed = spd };
-    return newPlayer;
+    const newEntity = Entity{ .hitBox = hitBox, .sprite = sprite, .currPosition = pos, .initPosition = pos, .rng = rand, .direction = dir, .collidesPlayer = colPlayer, .speed = spd - assignedSpeed };
+    return newEntity;
+}
+
+pub fn createObstacle(w_width: comptime_int, w_height: comptime_int, width: c_int, textPath: [:0]const u8, spd: f32, colPlayer: bool, rand: std.Random) !Entity {
+    if (Entity.texture == null) {
+        texture = try sf.Texture.createFromFile(textPath);
+    }
+    const pos = .{ .x = w_width * 7 / 6, .y = 2 * w_height / 3 };
+    const text = texture.?;
+
+    var sprite = try sf.Sprite.createFromTexture(text);
+    sprite.setTextureRect(.{ .top = 0, .left = 0, .width = width, .height = 20 });
+    sprite.setPosition(pos);
+
+    var hitBox = try sf.RectangleShape.create(.{ .x = @floatFromInt(width), .y = 20 });
+    hitBox.setPosition(pos);
+    hitBox.setTexture(Entity.texture.?);
+
+    const dir = .{ .x = -1, .y = 0 };
+
+    const newEntity = Entity{ .hitBox = hitBox, .sprite = sprite, .currPosition = pos, .initPosition = pos, .rng = rand, .direction = dir, .collidesPlayer = colPlayer, .speed = spd };
+    return newEntity;
 }
 
 pub fn destroy(self: *Entity) void {
@@ -75,6 +91,10 @@ pub fn render_update(self: *Entity, dt: f32) bool {
 
 pub fn phys_update(self: *Entity, dt: f32) bool {
     self.scroll(dt);
+    if (self.currPosition.x < -100) {
+        self.currPosition.x = self.initPosition.x + (self.rng.float(f32) * 200 - 100);
+        self.speed = self.speed + ((self.rng.float(f32) * 40) - 20);
+    }
     return true;
 }
 
