@@ -23,15 +23,18 @@ spriteAnimationTimeAcc: f32 = 0,
 // Jump handling - phys
 isJumping: bool = false,
 halfJumptime: f32 = 1.0 / 60.0 * 45.0,
-jumpHeight: f32 = 90,
+jumpHeight: f32 = 75,
 currJumpTime: f32 = 0,
+
+// UUID
+uuid: u32 = 0,
 
 const catWidth = 30;
 const catHeight = 20;
 
 var texture: ?sf.Texture = null;
 
-pub fn create(w_width: comptime_int, w_height: comptime_int, allocator: std.mem.Allocator) !*Cat {
+pub fn create(w_width: comptime_int, w_height: comptime_int, allocator: std.mem.Allocator, rand: std.Random) !*Cat {
     if (Cat.texture == null) {
         texture = try sf.Texture.createFromFile("./Assets/Mousse.png");
     }
@@ -46,8 +49,11 @@ pub fn create(w_width: comptime_int, w_height: comptime_int, allocator: std.mem.
     hitBox.setPosition(pos);
     hitBox.setTexture(Cat.texture.?);
 
+    const id = rand.int(u32);
+    print("Player id {d}\n", .{id});
+
     const newPlayer: *Cat = try allocator.create(Cat);
-    newPlayer.* = Cat{ .hitBox = hitBox, .sprite = sprite, .currPosition = pos, .initPosition = pos };
+    newPlayer.* = Cat{ .hitBox = hitBox, .sprite = sprite, .currPosition = pos, .initPosition = pos, .uuid = id };
     return newPlayer;
 }
 

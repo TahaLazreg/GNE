@@ -31,6 +31,9 @@ direction: sf.Vector2(f32),
 // Random
 rng: std.Random,
 
+// UUID
+uuid: u32 = 0,
+
 var texture: ?sf.Texture = null;
 
 pub fn createSkyDec(w_width: comptime_int, w_height: comptime_int, textPath: [:0]const u8, spd: f32, colPlayer: bool, rand: std.Random) !Entity {
@@ -73,7 +76,10 @@ pub fn createObstacle(w_width: comptime_int, w_height: comptime_int, width: c_in
 
     const dir = .{ .x = -1, .y = 0 };
 
-    const newEntity = Entity{ .hitBox = hitBox, .sprite = sprite, .currPosition = pos, .initPosition = pos, .rng = rand, .direction = dir, .collidesPlayer = colPlayer, .speed = spd };
+    const id = rand.int(u32);
+    print("Obstacle id {d}\n", .{id});
+
+    const newEntity = Entity{ .hitBox = hitBox, .sprite = sprite, .currPosition = pos, .initPosition = pos, .rng = rand, .direction = dir, .collidesPlayer = colPlayer, .speed = spd, .uuid = id };
     return newEntity;
 }
 
@@ -92,9 +98,13 @@ pub fn render_update(self: *Entity, dt: f32) bool {
 pub fn phys_update(self: *Entity, dt: f32) bool {
     self.scroll(dt);
     if (self.currPosition.x < -100) {
-        self.currPosition.x = self.initPosition.x + (self.rng.float(f32) * 200 - 100);
-        self.speed = self.speed + ((self.rng.float(f32) * 40) - 20);
+        self.currPosition.x = self.initPosition.x;
     }
+    return true;
+}
+
+pub fn reset(self: *Entity) bool {
+    self.currPosition.x = self.initPosition.x;
     return true;
 }
 
